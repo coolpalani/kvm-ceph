@@ -1,0 +1,58 @@
+#cloud-config
+# vim: syntax=yaml
+fqdn: %HOST%
+timezone: Asia/Shanghai
+ssh_pwauth: true
+ssh_authorized_keys: 
+ - %SSH_KEY_INFO%
+disable_root: 0
+user: root
+password: %PASSWD%
+chpasswd:
+  expire: false
+users:
+  - name: ceph
+    gecos: Ceph User
+    lock_passwd: false
+    plain_text_passwd: %PASSWD%
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    ssh-authorized-keys: %SSH_KEY_INFO%
+    ssh-import-id: ceph
+package_upgrade: true
+packages:
+ - git
+ - vim
+ - wget
+ - openssh-server
+ - ntp
+ - ntpdate
+ - ntp-doc
+yum_repos:
+    ceph:
+        name: Ceph packages
+        baseurl: http://download.ceph.com/rpm-jewel/el7/x86_64/
+        enabled: 1
+        gpgcheck: 1
+        type: rpm-md
+        gpgkey: https://download.ceph.com/keys/release.asc
+    ceph-noarch:
+        name: Ceph noarch packages
+        baseurl: http://download.ceph.com/rpm-jewel/el7/noarch/
+        enabled: 1
+        gpgcheck: 1
+        type: rpm-md
+        gpgkey: https://download.ceph.com/keys/release.asc
+bootcmd:
+ - mv /etc/sysconfig/network-scripts/ifcfg-eth0 /etc/sysconfig/network-scripts/ifcfg-ens3
+ - sed -i "s,eth0,ens3,g" /etc/sysconfig/network-scripts/ifcfg-ens3
+ - sed -i "s,dhcp,static,g" /etc/sysconfig/network-scripts/ifcfg-ens3
+ - cat >> /etc/sysconfig/network-scripts/ifcfg-ens3 <<EOF
+ - IPADDR="%IP%"
+ - PREFIX="24"
+ - GATEWAY="%GATEWAY%"
+ - DNS1="202.96.209.5"
+ - EOF
+ - cat >> /etc/hosts <<EOF
+%HOSTS%
+ - EOF
+ - systemctl restart network
