@@ -8,6 +8,8 @@ raw_file="/root/Desktop/CentOS-7-x86_64-GenericCloud-20160331_01.raw"
 #实例存放地址，绝对地址
 vm_instance_path="$current_path/instance"
 cloud_init_config_path="$current_path/config_drive"
+meta_data_sample="config_samples/meta_data.json"
+user_data_sample="config_samples/user_data"
 ##各类虚拟机数量
 vm_number_admin=1
 vm_number_mon=3
@@ -19,7 +21,6 @@ vm_hosts=""
 vm_passwd="password"
 ##虚拟机实例主机名后缀
 vm_host_suffix="kzg"
-#vm_hosts=""
 ##虚拟机IP及GATEWAY设置
 ip_prfix="192.168.252."
 ip_cluster_prfix="192.168.122."
@@ -32,7 +33,11 @@ gateway_cluster="${ip_prfix}1"
 base_ceph_admin_xml="$current_path/ceph_mon.xml"
 base_ceph_mon_xml="$current_path/ceph_mon.xml"
 base_ceph_osd_xml="$current_path/ceph_osd.xml"
-ssh_key_pub=""
+##宿主机用于远程登陆的key
+ssh_key_pub="$(cat ~/.ssh/id_rsa.pub)"
+##ceph集群中用于免密登陆的ssh_key
+rsa_key=""
+rsa_key_pub="$(cat id_rsa.pub)"
 
 _create_hosts(){
 	index=0
@@ -68,6 +73,8 @@ _create_hosts(){
 			fi
 		done	
 	done
+	#将宿主机IP一并加入
+	vm_hosts="$vm_hosts\n - 192.168.252.67 develop.ssc"
 }
 
 _create_vm(){
@@ -141,8 +148,8 @@ _create_vm(){
 		mkdir -p $vm_path
 		mkdir -p $driver_config_path/openstack/2012-08-10
 		ln -sv $driver_config_path/openstack/2012-08-10 $driver_config_path/openstack/latest
-		cp meta_data.json $meta_data_file
-		cp user_data $user_data_file
+		cp $meta_data_sample $meta_data_file
+		cp $user_data_sample $user_data_file
 		
 		sed -i "s,%UUID%,$uuid,g" $meta_data_file
 		sed -i "s,%HOST%,$vm_hostname,g" $user_data_file
@@ -151,6 +158,8 @@ _create_vm(){
 		sed -i "s,%IP%,$ip,g" $user_data_file
 		sed -i "s,%GATEWAY%,$gateway,g" $user_data_file
 		sed -i "s,%HOSTS%,$vm_hosts,g" $user_data_file
+		sed -i "s,%RSA_KEY%,$rsa_key,g" $user_data_file
+		sed -i "s,%RSA_KEY_PUB%,$rsa_key_pub,g" $user_data_file
 		##osd虚拟机需要第二块网卡
 		if [ "$vm_type"x = "osd"x ]
 		then
@@ -247,13 +256,28 @@ else
 	#vm_passwd=$passwd
 	if [ ! -f "id_rsa" ]
 	then
+		echo "开始生成CEPH环境下的ssh_key(当前目录下id_rsa文件)..."
 		ssh-keygen -t rsa -f id_rsa -N ''
 	fi
-	ssh_key_pub=$(cat id_rsa.pub)
+	
+	# 读取生成的RSA_KEY
+	while read line
+	do
+		#第一行不需要换行符
+		if [ "$rsa_key"x = ""x ]
+		then
+			rsa_key="    $(echo $line | sed 's,\r\n,,g' )"
+		else
+			rsa_key="$rsa_key\r    $(echo $line | sed 's,\r\n,,g' )"
+		fi
+	done < id_rsa
+	
 	export LIBGUESTFS_BACKEND=direct
 	
 	#创建Hosts文件
 	_create_hosts
+	
+	#创建虚拟机
 	_create_vm "admin"
 	_create_vm "mon"
 	_create_vm "osd"

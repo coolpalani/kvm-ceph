@@ -2,12 +2,12 @@
 # vim: syntax=yaml
 fqdn: %HOST%
 timezone: Asia/Shanghai
-ssh_pwauth: true
-ssh_authorized_keys: 
- - %SSH_KEY_INFO%
 disable_root: 0
 user: root
 password: %PASSWD%
+ssh_pwauth: true
+ssh_authorized_keys: 
+ - %SSH_KEY_INFO%
 chpasswd:
   expire: false
 users:
@@ -16,8 +16,13 @@ users:
     lock_passwd: false
     plain_text_passwd: %PASSWD%
     sudo: ALL=(ALL) NOPASSWD:ALL
-    ssh-authorized-keys: %SSH_KEY_INFO%
-    ssh-import-id: ceph
+    ssh-authorized-keys: 
+     - %SSH_KEY_INFO%
+ssh_keys:
+  rsa_private: |
+%RSA_KEY%
+    
+  rsa_public: %RSA_KEY_PUB%
 package_upgrade: true
 packages:
  - git
