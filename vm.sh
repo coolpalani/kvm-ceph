@@ -266,9 +266,9 @@ else
 		#第一行不需要换行符
 		if [ "$rsa_key"x = ""x ]
 		then
-			rsa_key="    $(echo $line | sed 's,\r\n,,g' )"
+			rsa_key="    $line"
 		else
-			rsa_key="$rsa_key\r    $(echo $line | sed 's,\r\n,,g' )"
+			rsa_key="$rsa_key\n    $line"
 		fi
 	done < id_rsa
 	
