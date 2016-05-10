@@ -47,7 +47,7 @@ yum_repos:
         gpgcheck: 1
         type: rpm-md
         gpgkey: https://download.ceph.com/keys/release.asc
-bootcmd:
+cloud-init-boot-per:
  - mv /etc/sysconfig/network-scripts/ifcfg-eth0 /etc/sysconfig/network-scripts/ifcfg-ens3
  - sed -i "s,eth0,ens3,g" /etc/sysconfig/network-scripts/ifcfg-ens3
  - sed -i "s,dhcp,static,g" /etc/sysconfig/network-scripts/ifcfg-ens3
@@ -60,6 +60,6 @@ bootcmd:
  - cat >> /etc/hosts <<EOF
 %HOSTS%
  - EOF
- - cp /etc/ssh/ssh_host_rsa_key /home/ceph/rsa_key
- - cp /etc/ssh/ssh_host_rsa_key.pub /home/ceph/rsa_key.pub
+ - sudo cp /etc/ssh/ssh_host_rsa_key /home/ceph/.ssh/id_rsa
+ - sudo cp /etc/ssh/ssh_host_rsa_key.pub /home/ceph/.ssh/id_rsa.pub
  - systemctl restart network
