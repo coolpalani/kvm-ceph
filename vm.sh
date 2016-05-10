@@ -34,10 +34,50 @@ base_ceph_admin_xml="$current_path/ceph_mon.xml"
 base_ceph_mon_xml="$current_path/ceph_mon.xml"
 base_ceph_osd_xml="$current_path/ceph_osd.xml"
 ##宿主机用于远程登陆的key
-ssh_key_pub="$(cat ~/.ssh/id_rsa.pub)"
+ssh_key_pub_admin=""
+ssh_key_pub_ceph=""
 ##ceph集群中用于免密登陆的ssh_key
 rsa_key=""
 rsa_key_pub="$(cat id_rsa.pub)"
+
+_create_authorized_keys(){
+	user=`whoami`
+	hostname=$(hostname)
+	index=0
+	for type in 'admin' 'mon' 'osd'
+	do
+		if [ "$type" = "admin" ]
+		then
+			vm_prefix="ceph_admin_"
+ 			vm_num=$vm_number_admin
+		elif [ "$type" = "mon" ]
+		then
+			vm_prefix="ceph_mon_"
+ 			vm_num=$vm_number_mon
+		else
+			vm_prefix="ceph_osd_"
+ 			vm_num=$vm_number_osd
+		fi
+		
+		for((i=1;i<=$vm_num;i++))
+		do
+			vm_name=$vm_prefix$i
+			key_name="$(cat id_rsa.pub|sed "s,$user@$hostname,ceph@$vm_name.$vm_host_suffix,g")"
+			if [ "$index" == "0" ]
+			then
+				ssh_key_pub_admin="$ssh_key_pub_admin - $key_name"
+				ssh_key_pub_ceph="$ssh_key_pub_ceph     - $key_name"
+				index=1
+			else
+				ssh_key_pub_admin="$ssh_key_pub_admin\n - $key_name"
+				ssh_key_pub_ceph="$ssh_key_pub_ceph\n     - $key_name"
+			fi
+		done	
+	done
+	#将宿主机key一并加入
+	ssh_key_pub_admin="$ssh_key_pub_admin\n - $(cat ~/.ssh/id_rsa.pub)"
+	ssh_key_pub_ceph="$ssh_key_pub_ceph\n     - $(cat ~/.ssh/id_rsa.pub)"
+}
 
 _create_hosts(){
 	index=0
@@ -157,7 +197,8 @@ _create_vm(){
 		sed -i "s,%UUID%,$uuid,g" $meta_data_file
 		sed -i "s,%HOST%,$vm_hostname,g" $user_data_file
 		sed -i "s,%PASSWD%,$vm_passwd,g" $user_data_file
-		sed -i "s,%SSH_KEY_INFO%,$ssh_key_pub,g" $user_data_file
+		sed -i "s,%SSH_KEY_PUB_ADMIN%,$ssh_key_pub_admin,g" $user_data_file
+		sed -i "s,%SSH_KEY_PUB_CEPH%,$ssh_key_pub_ceph,g" $user_data_file
 		sed -i "s,%IP%,$ip,g" $user_data_file
 		sed -i "s,%GATEWAY%,$gateway,g" $user_data_file
 		sed -i "s,%HOSTS%,$vm_hosts,g" $user_data_file
@@ -279,6 +320,7 @@ else
 	
 	#创建Hosts文件
 	_create_hosts
+	_create_authorized_keys
 	
 	#创建虚拟机
 	_create_vm "admin"

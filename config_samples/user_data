@@ -7,7 +7,7 @@ user: root
 password: %PASSWD%
 ssh_pwauth: true
 ssh_authorized_keys: 
- - %SSH_KEY_INFO%
+%SSH_KEY_PUB_ADMIN%
 chpasswd:
   expire: false
 users:
@@ -17,7 +17,7 @@ users:
     plain_text_passwd: %PASSWD%
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh-authorized-keys: 
-     - %SSH_KEY_INFO%
+%SSH_KEY_PUB_CEPH%
 ssh_keys:
   rsa_private: |
 %RSA_KEY%
