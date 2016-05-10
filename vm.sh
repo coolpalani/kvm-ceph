@@ -150,6 +150,9 @@ _create_vm(){
 		ln -sv $driver_config_path/openstack/2012-08-10 $driver_config_path/openstack/latest
 		cp $meta_data_sample $meta_data_file
 		cp $user_data_sample $user_data_file
+		user=`whoami`
+		hostname=$(hostname)
+		rsa_key_pub=$(cat id_rsa.pub|sed "s,${user}@${hostname},ceph@${vm_hostname},g")
 		
 		sed -i "s,%UUID%,$uuid,g" $meta_data_file
 		sed -i "s,%HOST%,$vm_hostname,g" $user_data_file
