@@ -149,7 +149,7 @@ _create_vm(){
 	do
 		##0.相关变量初始化
 		vm_name=$vm_prefix$i
-		vm_hostname="$vm_name.$vm_host_suffix"
+		vm_fqdn="$vm_name.$vm_host_suffix"
 		vm_path="$vm_instance_path/$vm_name"
 		vm_xml_file="$vm_path/vm.xml"		
 		vm_vda_file="$vm_path/vda.qcow2"
@@ -192,10 +192,11 @@ _create_vm(){
 		cp $user_data_sample $user_data_file
 		user=`whoami`
 		hostname=$(hostname)
-		rsa_key_pub=$(cat id_rsa.pub|sed "s,${user}@${hostname},ceph@${vm_hostname},g")
+		rsa_key_pub=$(cat id_rsa.pub|sed "s,${user}@${hostname},ceph@${vm_fqdn},g")
 		
 		sed -i "s,%UUID%,$uuid,g" $meta_data_file
-		sed -i "s,%HOST%,$vm_hostname,g" $user_data_file
+		sed -i "s,%FQDN%,$vm_fqdn,g" $user_data_file
+		sed -i "s,%HOST%,$vm_name,g" $user_data_file
 		sed -i "s,%PASSWD%,$vm_passwd,g" $user_data_file
 		sed -i "s,%SSH_KEY_PUB_ADMIN%,$ssh_key_pub_admin,g" $user_data_file
 		sed -i "s,%SSH_KEY_PUB_CEPH%,$ssh_key_pub_ceph,g" $user_data_file
@@ -310,9 +311,9 @@ else
 		#第一行不需要换行符
 		if [ "$rsa_key"x = ""x ]
 		then
-			rsa_key="    $line"
+			rsa_key="       $line"
 		else
-			rsa_key="$rsa_key\n    $line"
+			rsa_key="$rsa_key\n       $line"
 		fi
 	done < id_rsa
 	

@@ -1,6 +1,8 @@
 #cloud-config
 # vim: syntax=yaml
-fqdn: %HOST%
+fqdn: %FQDN%
+hostname: %HOST%
+manage_etc_hosts: true
 timezone: Asia/Shanghai
 disable_root: 0
 user: root
@@ -8,9 +10,9 @@ password: %PASSWD%
 ssh_pwauth: true
 ssh_authorized_keys: 
 %SSH_KEY_PUB_ADMIN%
-chpasswd:
+chpasswd: 
   expire: false
-users:
+users: 
   - name: ceph
     gecos: Ceph User
     lock_passwd: false
@@ -18,11 +20,6 @@ users:
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh-authorized-keys: 
 %SSH_KEY_PUB_CEPH%
-ssh_keys:
-  rsa_private: |
-%RSA_KEY%
-    
-  rsa_public: %RSA_KEY_PUB%
 package_upgrade: true
 packages:
  - git
@@ -47,7 +44,7 @@ yum_repos:
         gpgcheck: 1
         type: rpm-md
         gpgkey: https://download.ceph.com/keys/release.asc
-cloud-init-boot-per:
+bootcmd: 
  - mv /etc/sysconfig/network-scripts/ifcfg-eth0 /etc/sysconfig/network-scripts/ifcfg-ens3
  - sed -i "s,eth0,ens3,g" /etc/sysconfig/network-scripts/ifcfg-ens3
  - sed -i "s,dhcp,static,g" /etc/sysconfig/network-scripts/ifcfg-ens3
@@ -57,9 +54,4 @@ cloud-init-boot-per:
  - GATEWAY="%GATEWAY%"
  - DNS1="202.96.209.5"
  - EOF
- - cat >> /etc/hosts <<EOF
-%HOSTS%
- - EOF
- - sudo cp /etc/ssh/ssh_host_rsa_key /home/ceph/.ssh/id_rsa
- - sudo cp /etc/ssh/ssh_host_rsa_key.pub /home/ceph/.ssh/id_rsa.pub
  - systemctl restart network
